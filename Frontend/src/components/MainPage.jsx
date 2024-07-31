@@ -3,7 +3,9 @@ import '../styles/mainpage.css'
 import Navbar from './Navbar'
 import { convert } from '../utils/bionicTextConversion'
 import { assets } from '../assets/assets'
+import { toast } from 'react-toastify'
 
+const url = 'localhost:3000/'
 const MainPage = () => {
 
   const textareaRef = useRef(null);
@@ -33,6 +35,7 @@ const MainPage = () => {
   }
 
   const handleFileChange = (e) => {
+    
     const uploadedFile = e.target.files[0];
     if(uploadedFile){
       setFile(uploadedFile);
@@ -54,8 +57,28 @@ const MainPage = () => {
     }
   }
 
-  const handleFormSubmit = () => {
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
     
+    try{
+      const formData = new FormData();
+      formData.append('file', file)
+      formData.append('filetype', fileType)
+
+      if(fileType=== 'application/pdf'){
+        const response = await axios.post(`${url}/bionique/convert/pdf`, formData);
+
+        // if(response.success)
+      }
+      else if(fileType=== 'application/word' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'){
+        console.log("word hai bhai");
+      }
+       
+    }
+    catch(error){
+      console.log(error);
+      toast.error("Error Occured");
+    }
   }
 
   return (
@@ -78,15 +101,11 @@ const MainPage = () => {
           <div className="convertor">
             <h1>Convert Document</h1>
             <div className="doc_convertor">
-              <form onSubmit={handleFormSubmit} className='doc_conv_form' action="" method="post">
-                <label htmlFor="doc">Select a Document Format</label>
-                <select className='doc_opts' name="doc_format" id="doc" defaultValue={"Select"}>
-                  <option value="Select">Select</option>
-                  <option value="Word">Word</option>
-                  <option value="pdf">pdf</option>
-                </select>
+              <form onSubmit={handleFormSubmit} className='doc_conv_form' action="" method="post" encType='multipart/form-data'>
+                <label htmlFor="doc">Upload a PDF or Word File</label>
 
-                <input onChange={handleFileChange} type='file' name='document' accept='application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf'/>
+
+                <input onChange={handleFileChange} type='file' id='doc' name='document' accept='application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf'/>
 
                 {file && renderImage()}
 
