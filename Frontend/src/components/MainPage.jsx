@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
+import axios from 'axios';
 import '../styles/mainpage.css'
 import Navbar from './Navbar'
 import { convert } from '../utils/bionicTextConversion'
 import { assets } from '../assets/assets'
 import { toast } from 'react-toastify'
 
-const url = 'localhost:3000/'
+const url = 'http://localhost:3000'
 const MainPage = () => {
 
   const textareaRef = useRef(null);
@@ -14,6 +15,8 @@ const MainPage = () => {
   const [highlited, setHighlighted] = useState('');
   const [file, setFile] = useState(null);
   const [fileType, setFileType] = useState('');
+  const [PdfText, setPdfText] = useState(null);
+  const [docText, setDocText] = useState(null);
 
 
   const handleChange = (e) => {
@@ -34,14 +37,15 @@ const MainPage = () => {
     setHighlighted(bionic_text);
   }
 
-  const handleFileChange = (e) => {
+  // const handleFileChange = (e) => {
     
-    const uploadedFile = e.target.files[0];
-    if(uploadedFile){
-      setFile(uploadedFile);
-      setFileType(uploadedFile.type);
-    }
-  }
+  //   const uploadedFile = e.target.files[0];
+  //   if(uploadedFile){
+  //     setFile(uploadedFile);
+  //     console.log(uploadedFile);
+  //     setFileType(uploadedFile.type);
+  //   }
+  // }
 
   const renderImage = ()=>{
     switch(fileType){
@@ -63,10 +67,20 @@ const MainPage = () => {
     try{
       const formData = new FormData();
       formData.append('file', file)
-      formData.append('filetype', fileType)
+      // formData.append('filetype', fileType)
 
       if(fileType=== 'application/pdf'){
-        const response = await axios.post(`${url}/bionique/convert/pdf`, formData);
+        const response = await axios.post(`${url}/upload/pdf`, formData, {
+          headers: {
+            'Content-Type' : 'multipart/form/data',
+          }
+        });
+        if(response.data){
+          setPdfText(response.data);
+        }
+        else{
+          console.log("Error Extracting text from document");
+        }
 
         // if(response.success)
       }
@@ -105,10 +119,11 @@ const MainPage = () => {
                 <label htmlFor="doc">Upload a PDF or Word File</label>
 
 
-                <input onChange={handleFileChange} type='file' id='doc' name='document' accept='application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf'/>
+                <input onChange={(e) => {setFile(e.target.files[0]); setFileType(e.target.files[0].type)}} type='file' id='doc' name='document' accept='application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf'/>
 
                 {file && renderImage()}
 
+                {PdfText && <div ref={resultRef} className="result" dangerouslySetInnerHTML={{__html: PdfText}}></div>}
                 <button className='doc_submit' type="submit">Submit</button>
               </form>
             </div>
