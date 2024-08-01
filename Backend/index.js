@@ -9,6 +9,12 @@ import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
 import multer from 'multer';
 import bionicConvertor from './utils/bionic_convert.js'
 
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+import mammoth from 'mammoth';
+
+import html2docx from 'html-docx-js'
+
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
@@ -38,6 +44,7 @@ app.post('/upload/pdf', upload.single('file'), async (req, res) => {
     const filePath = path.join(__dirname, 'uploads', fileName);
     const fileDataBuffer = fs.readFileSync(filePath);
     const fileData = new Uint8Array(fileDataBuffer);
+    console.log(file);
     
     const pdfDoc = PDFDocument.load(fileData);
 
@@ -54,36 +61,41 @@ app.post('/upload/pdf', upload.single('file'), async (req, res) => {
     console.log(textContent);
 
     const bionicText = bionicConvertor(textContent);
-    // console.log(bionicText);
 
     res.send(bionicText);
 
-    // const result = await PDFDocument.create();
-    // const page = result.addPage([600,400]);
-    // page.drawText(bionicText, {
-    //     x: 30,
-    //     y: 350,
-    //     size: 14
-    // });
-
-    // const pdfBytes = await result.save();
-
-    // const newFilePath = path.join(__dirname, 'uploads', `bionic_${req.file.filename}`);
-    // fs.writeFileSync(newFilePath, pdfBytes);
-
-
-    // res.download(newFilePath, `bionic_${req.file.filename}.pdf`, (err) => {
-    //     console.error(err);
-    //     res.status(500).send('Server Error');
-    // })
-
     fs.unlinkSync(filePath);
-    // fs.unlinkSync(newFilePath);
-
-    // console.log(pdf);
-    // res.send("All Ok");
 })
 
+app.post('/upload/word', upload.single('file'), async (req, res) => {
+  const file = req.file;
+  const filePath = path.join(__dirname, 'uploads', file.filename);
+
+  const result = await mammoth.convertToHtml({path: filePath});
+  const html = result.value;
+
+  res.send(html);
+
+  fs.unlinkSync(filePath);
+})
+
+app.post('/download', (req, res) => {
+  const {docText} = req.query;
+
+  if(!docText){
+    res.status(400).send("No HTML Content Provided");
+  }
+
+  try{
+    const wordDoc = html2docx.asBlob(docText);
+    res.setHeader('Content-Dispositon', 'attachment; filename=document.docx');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    res.send(wordDoc)
+  }
+  catch(err){
+    console.log(err);
+  }
+})
 
 app.listen(port, () => {
     console.log(`Server is Live on Port ${port}`);

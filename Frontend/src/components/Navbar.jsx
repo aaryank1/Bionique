@@ -10,9 +10,6 @@ const Navbar = () => {
         <Link to={'/bionique'}>
           <img className='logo' src={assets.bionique_transparent} alt="logo" />
         </Link>
-        <div className="user_opts">
-            <button className='signin' >SignIn</button>
-        </div>
     </div>
   )
 }

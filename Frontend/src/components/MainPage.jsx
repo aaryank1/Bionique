@@ -15,7 +15,6 @@ const MainPage = () => {
   const [highlited, setHighlighted] = useState('');
   const [file, setFile] = useState(null);
   const [fileType, setFileType] = useState('');
-  const [PdfText, setPdfText] = useState(null);
   const [docText, setDocText] = useState(null);
 
 
@@ -27,6 +26,25 @@ const MainPage = () => {
     textareaRef.current.style.height = 'auto';
     textareaRef.current.style.height = textareaRef.current.scrollHeight+'px';
   },[val]);
+
+  function updateHtmlWithBionicText(html) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    doc.body.querySelectorAll('*').forEach(el => {
+      el.childNodes.forEach(child => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          const originalText = child.nodeValue;
+          const bionicText = convert(originalText);
+          const span = document.createElement('span');
+          span.innerHTML = bionicText;
+          el.replaceChild(span, child);
+        }
+      });
+    });
+  
+    return doc.body.innerHTML;
+  }
 
   const handleSubmit = ()=> {
     if(val===''){
@@ -76,7 +94,7 @@ const MainPage = () => {
           }
         });
         if(response.data){
-          setPdfText(response.data);
+          setDocText(response.data);
         }
         else{
           console.log("Error Extracting text from document");
@@ -85,13 +103,43 @@ const MainPage = () => {
         // if(response.success)
       }
       else if(fileType=== 'application/word' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'){
-        console.log("word hai bhai");
+        const response = await axios.post(`${url}/upload/word`, formData, {
+          headers:{
+            "Content-Type": "multipart/form/data",
+          }
+        })
+        console.log(response);
+        const finalDoc = updateHtmlWithBionicText(response.data);
+        
+        setDocText(finalDoc);
       }
        
     }
     catch(error){
       console.log(error);
-      toast.error("Error Occured");
+    }
+  }
+
+  const handleDownload = async () => {
+    try{
+      const response = await axios({
+        url: url,
+        method: 'GET',
+        params: {docText},
+        responseType: 'blob'
+      });
+
+      const docUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = link;
+      link.setAttribute('download', 'document.docx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    }
+    catch(error){
+      console.log(error);
     }
   }
 
@@ -100,7 +148,7 @@ const MainPage = () => {
         <Navbar />
         <div className="mainpage_container">
 
-          <div className="convertor">
+          <div className="convertor bionic">
             
             <h1 className='convertor_title'>Bionic Reading</h1>
             <div className="bionic_convertor">
@@ -118,12 +166,14 @@ const MainPage = () => {
               <form onSubmit={handleFormSubmit} className='doc_conv_form' action="" method="post" encType='multipart/form-data'>
                 <label htmlFor="doc">Upload a PDF or Word File</label>
 
-
-                <input onChange={(e) => {setFile(e.target.files[0]); setFileType(e.target.files[0].type)}} type='file' id='doc' name='document' accept='application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf'/>
+                <div className="inp_dwn_container">
+                  <input onChange={(e) => {setFile(e.target.files[0]); setFileType(e.target.files[0].type)}} type='file' id='doc' name='document' accept='application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf'/>
+                  {docText && <img onClick={handleDownload} className='download_icon' src={assets.download} alt="dwnld" />}
+                </div>
 
                 {file && renderImage()}
 
-                {PdfText && <div ref={resultRef} className="result" dangerouslySetInnerHTML={{__html: PdfText}}></div>}
+                {docText && <div ref={resultRef} className="result" dangerouslySetInnerHTML={{__html: docText}}></div>}
                 <button className='doc_submit' type="submit">Submit</button>
               </form>
             </div>

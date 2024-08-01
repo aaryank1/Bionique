@@ -23,14 +23,3 @@ body{
 .logo{
     width: 10rem;
 }
-
-.signin{
-    width: 6rem;
-    height: 2rem;
-    background-color: rgb(255, 255, 255);
-    border: none;
-    border-radius: 2rem;
-    cursor: pointer;
-    margin-right: 1rem;
-}
-
