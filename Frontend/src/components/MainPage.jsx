@@ -8,14 +8,13 @@ import { toast } from 'react-toastify'
 
 const url = 'http://localhost:3000'
 const MainPage = () => {
-
+  const [docText, setDocText] = useState('');
   const textareaRef = useRef(null);
   const resultRef = useRef(null)
-  const [val, setVal] = useState('');
-  const [highlited, setHighlighted] = useState('');
+  const [val, setVal] = useState("");
+  const [highlited, setHighlighted] = useState("");
   const [file, setFile] = useState(null);
-  const [fileType, setFileType] = useState('');
-  const [docText, setDocText] = useState(null);
+  const [fileType, setFileType] = useState("");
 
 
   const handleChange = (e) => {
@@ -53,17 +52,9 @@ const MainPage = () => {
     }
     const bionic_text = convert(val);
     setHighlighted(bionic_text);
-  }
-
-  // const handleFileChange = (e) => {
+    // console.log(highlited);
     
-  //   const uploadedFile = e.target.files[0];
-  //   if(uploadedFile){
-  //     setFile(uploadedFile);
-  //     console.log(uploadedFile);
-  //     setFileType(uploadedFile.type);
-  //   }
-  // }
+  }
 
   const renderImage = ()=>{
     switch(fileType){
@@ -88,6 +79,7 @@ const MainPage = () => {
       // formData.append('filetype', fileType)
 
       if(fileType=== 'application/pdf'){
+        setFileType('pdf')
         const response = await axios.post(`${url}/upload/pdf`, formData, {
           headers: {
             'Content-Type' : 'multipart/form/data',
@@ -95,6 +87,8 @@ const MainPage = () => {
         });
         if(response.data){
           setDocText(response.data);
+          console.log(docText);
+          
         }
         else{
           console.log("Error Extracting text from document");
@@ -103,13 +97,16 @@ const MainPage = () => {
         // if(response.success)
       }
       else if(fileType=== 'application/word' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'){
+        setFileType('word');
         const response = await axios.post(`${url}/upload/word`, formData, {
           headers:{
             "Content-Type": "multipart/form/data",
           }
         })
-        console.log(response);
-        const finalDoc = updateHtmlWithBionicText(response.data);
+        // console.log(response);
+        let finalDoc = updateHtmlWithBionicText(response.data);
+        // console.log(finalDoc);
+        
         
         setDocText(finalDoc);
       }
@@ -121,17 +118,19 @@ const MainPage = () => {
   }
 
   const handleDownload = async () => {
+    // console.log(docText);
+    
     try{
-      const response = await axios({
-        url: url,
-        method: 'GET',
-        params: {docText},
+      const response = await axios.post(`${url}/download`, {docText, fileType}, {
+        headers: {
+          'Content-Type' : 'application/json'
+        },
         responseType: 'blob'
       });
 
       const docUrl = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
-      link.href = link;
+      link.href = docUrl;
       link.setAttribute('download', 'document.docx');
       document.body.appendChild(link);
       link.click();
@@ -139,7 +138,7 @@ const MainPage = () => {
       window.URL.revokeObjectURL(url);
     }
     catch(error){
-      console.log(error);
+      console.log("Error Downloading File", error);
     }
   }
 

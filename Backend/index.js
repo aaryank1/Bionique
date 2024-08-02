@@ -9,16 +9,19 @@ import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
 import multer from 'multer';
 import bionicConvertor from './utils/bionic_convert.js'
 
-import { Document, Packer, Paragraph, TextRun } from 'docx';
 import mammoth from 'mammoth';
+import HTMLtoDOCX from 'html-to-docx/dist/html-to-docx.umd.js';
 
-import html2docx from 'html-docx-js'
+import bodyParser from 'body-parser';
 
+// import Docxtemplater from 'docxtemplater';
+// import PizZip from 'pizzip';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const port = process.env.PORT || 3000;
+const __dirname = dirname(fileURLToPath(import.meta.url));
+app.use(bodyParser.json({limit:'50mb'}))
 app.use(cors());
 
 const storage = multer.diskStorage({
@@ -44,7 +47,7 @@ app.post('/upload/pdf', upload.single('file'), async (req, res) => {
     const filePath = path.join(__dirname, 'uploads', fileName);
     const fileDataBuffer = fs.readFileSync(filePath);
     const fileData = new Uint8Array(fileDataBuffer);
-    console.log(file);
+    // console.log(file);
     
     const pdfDoc = PDFDocument.load(fileData);
 
@@ -58,7 +61,7 @@ app.post('/upload/pdf', upload.single('file'), async (req, res) => {
         console.log("Text", text);
         textContent += text.items.map(item => item.str).join(' ') + ' ';
     }
-    console.log(textContent);
+    // console.log(textContent);
 
     const bionicText = bionicConvertor(textContent);
 
@@ -79,22 +82,41 @@ app.post('/upload/word', upload.single('file'), async (req, res) => {
   fs.unlinkSync(filePath);
 })
 
-app.post('/download', (req, res) => {
-  const {docText} = req.query;
+app.post('/download', async (req, res) => {
+  const {docText, fileType} = req.body;
 
-  if(!docText){
-    res.status(400).send("No HTML Content Provided");
-  }
+  const htmlString = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bionique</title>
+  </head>
+  <body>
+  ${docText}
+    </body>
+</html>
+`
+    if(fileType==='word'){
+      try{    
+        const fileBuffer = await HTMLtoDOCX(htmlString, null, {
+          table: { row: { cantSplit: true } },
+          footer: true,
+          pageNumber: true,
+        });
+        
+        res.setHeader('Content-Dispositon', 'attachment; filename=document.docx');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        res.send(fileBuffer);
+      }
+      catch(err){
+        console.log(err);
+      }
+    }
+    else if(fileType==='pdf'){
 
-  try{
-    const wordDoc = html2docx.asBlob(docText);
-    res.setHeader('Content-Dispositon', 'attachment; filename=document.docx');
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    res.send(wordDoc)
-  }
-  catch(err){
-    console.log(err);
-  }
+    }
 })
 
 app.listen(port, () => {
