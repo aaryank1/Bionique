@@ -9,14 +9,13 @@ import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
 import multer from 'multer';
 import bionicConvertor from './utils/bionic_convert.js'
 
+import pdf2html from 'pdf2html';
+import puppeteer from 'puppeteer';
+
 import mammoth from 'mammoth';
 import HTMLtoDOCX from 'html-to-docx/dist/html-to-docx.umd.js';
 
 import bodyParser from 'body-parser';
-
-// import Docxtemplater from 'docxtemplater';
-// import PizZip from 'pizzip';
-
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -42,31 +41,12 @@ app.get('/', (req, res) => {
 
 app.post('/upload/pdf', upload.single('file'), async (req, res) => {
     const file = req.file;
-    const fileName = file.filename;
-    console.log(fileName);
-    const filePath = path.join(__dirname, 'uploads', fileName);
-    const fileDataBuffer = fs.readFileSync(filePath);
-    const fileData = new Uint8Array(fileDataBuffer);
-    // console.log(file);
+    const filePath = path.join(__dirname, 'uploads', file.filename);
+    const html = await pdf2html.html(filePath);
     
-    const pdfDoc = PDFDocument.load(fileData);
-
-    // Extracting Text from the Input Pdf file
-    const pdf = await pdfjsLib.getDocument({data: fileData}).promise;
-    let textContent = '';
-
-    for(let i=1; i<=pdf.numPages; i++){
-        const page = await pdf.getPage(i);
-        const text = await page.getTextContent();
-        console.log("Text", text);
-        textContent += text.items.map(item => item.str).join(' ') + ' ';
-    }
-    // console.log(textContent);
-
-    const bionicText = bionicConvertor(textContent);
-
-    res.send(bionicText);
-
+    // console.log(html);
+    
+    res.send(html);
     fs.unlinkSync(filePath);
 })
 
@@ -85,27 +65,28 @@ app.post('/upload/word', upload.single('file'), async (req, res) => {
 app.post('/download', async (req, res) => {
   const {docText, fileType} = req.body;
 
-  const htmlString = `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bionique</title>
-  </head>
-  <body>
-  ${docText}
-    </body>
-</html>
-`
-    if(fileType==='word'){
-      try{    
+  if(fileType==='application/msword' || fileType=== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ){
+    const htmlString = `<!doctype html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Bionique</title>
+        </head>
+        <body>
+        ${docText}
+        </body>
+      </html>
+      `
+      try{
         const fileBuffer = await HTMLtoDOCX(htmlString, null, {
           table: { row: { cantSplit: true } },
+          font: 'Verdana',
           footer: true,
           pageNumber: true,
         });
-        
+
         res.setHeader('Content-Dispositon', 'attachment; filename=document.docx');
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
         res.send(fileBuffer);
@@ -114,8 +95,24 @@ app.post('/download', async (req, res) => {
         console.log(err);
       }
     }
-    else if(fileType==='pdf'){
+    else if(fileType==='application/pdf'){
+      try {
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
 
+        await page.setContent(docText);
+
+        res.setHeader('Content-Disposition', 'attachment; filename=document.pdf');
+        res.setHeader('Content-Type', 'application/pdf');
+        const fileBuffer = await page.pdf({format: 'A4'});
+
+        await browser.close();
+
+        res.send(fileBuffer);
+
+      } catch (error) {
+        console.log(error);
+      }
     }
 })
 

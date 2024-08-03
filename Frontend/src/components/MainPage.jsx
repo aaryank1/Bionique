@@ -15,6 +15,7 @@ const MainPage = () => {
   const [highlited, setHighlighted] = useState("");
   const [file, setFile] = useState(null);
   const [fileType, setFileType] = useState("");
+  const [loading, setLoading] = useState(false);
 
 
   const handleChange = (e) => {
@@ -79,25 +80,22 @@ const MainPage = () => {
       // formData.append('filetype', fileType)
 
       if(fileType=== 'application/pdf'){
-        setFileType('pdf')
+        // setFileType('pdf')
+        setLoading(true);
         const response = await axios.post(`${url}/upload/pdf`, formData, {
           headers: {
             'Content-Type' : 'multipart/form/data',
           }
         });
-        if(response.data){
-          setDocText(response.data);
-          console.log(docText);
-          
-        }
-        else{
-          console.log("Error Extracting text from document");
-        }
+        
+        let finalpdf = updateHtmlWithBionicText(response.data);
+        setDocText(finalpdf);
+        setLoading(false);
 
-        // if(response.success)
       }
-      else if(fileType=== 'application/word' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'){
-        setFileType('word');
+      else if(fileType=== 'application/msword' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'){
+        // setFileType('word');
+        setLoading(true);
         const response = await axios.post(`${url}/upload/word`, formData, {
           headers:{
             "Content-Type": "multipart/form/data",
@@ -109,6 +107,7 @@ const MainPage = () => {
         
         
         setDocText(finalDoc);
+        setLoading(false);
       }
        
     }
@@ -120,25 +119,53 @@ const MainPage = () => {
   const handleDownload = async () => {
     // console.log(docText);
     
-    try{
-      const response = await axios.post(`${url}/download`, {docText, fileType}, {
-        headers: {
-          'Content-Type' : 'application/json'
-        },
-        responseType: 'blob'
-      });
-
-      const docUrl = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = docUrl;
-      link.setAttribute('download', 'document.docx');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+    if(fileType === 'application/msword' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'){
+      try{
+        setLoading(true);
+        const response = await axios.post(`${url}/download`, {docText, fileType}, {
+          headers: {
+            'Content-Type' : 'application/json'
+          },
+          responseType: 'blob'
+        });
+        setLoading(false);
+  
+        const docUrl = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = docUrl;
+        link.setAttribute('download', 'document.docx');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      }
+      catch(error){
+        console.log("Error Downloading File", error);
+      }
     }
-    catch(error){
-      console.log("Error Downloading File", error);
+    else{
+      try{
+        setLoading(true);
+        const response = await axios.post(`${url}/download`, {docText, fileType}, {
+          headers: {
+            'Content-Type' : 'application/json'
+          },
+          responseType: 'blob'
+        });
+        setLoading(false);
+  
+        const docUrl = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = docUrl;
+        link.setAttribute('download', 'document.pdf');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      }
+      catch(error){
+        console.log("Error Downloading File", error);
+      }
     }
   }
 
@@ -172,7 +199,14 @@ const MainPage = () => {
 
                 {file && renderImage()}
 
-                {docText && <div ref={resultRef} className="result" dangerouslySetInnerHTML={{__html: docText}}></div>}
+                {loading ?
+                 (<div className='loading'>
+                  <div className="load"></div>
+                 </div>)
+                 : 
+                 (docText && <div ref={resultRef} className="result" dangerouslySetInnerHTML={{__html: docText}}></div>)
+                } 
+
                 <button className='doc_submit' type="submit">Submit</button>
               </form>
             </div>

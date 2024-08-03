@@ -135,4 +135,28 @@ body{
 
 .download_icon{
     width: 2rem;
+    cursor: pointer;
+}
+
+.loading{
+    width: 2rem;
+    height: 2rem;
+    background-color: #444343;
+    border-radius: 50%;
+
+}
+
+.load{
+    width: 2rem;
+    height: 2rem;
+    border: 4px solid rgb(85, 85, 85);
+    border-radius: 50%;
+    border-top: 4px solid rgb(230, 77, 77);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
