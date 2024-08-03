@@ -4,10 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { PDFDocument, rgb } from 'pdf-lib';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
 import multer from 'multer';
-import bionicConvertor from './utils/bionic_convert.js'
 
 import pdf2html from 'pdf2html';
 import puppeteer from 'puppeteer';
