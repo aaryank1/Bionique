@@ -6,7 +6,6 @@ import { convert } from '../utils/bionicTextConversion'
 import { assets } from '../assets/assets'
 import { toast } from 'react-toastify'
 
-const url = 'http://localhost:3000'
 const MainPage = () => {
   const [docText, setDocText] = useState('');
   const textareaRef = useRef(null);
@@ -82,7 +81,7 @@ const MainPage = () => {
       if(fileType=== 'application/pdf'){
         // setFileType('pdf')
         setLoading(true);
-        const response = await axios.post(`${url}/upload/pdf`, formData, {
+        const response = await axios.post(`${import.meta.env.VITE_URL}/upload/pdf`, formData, {
           headers: {
             'Content-Type' : 'multipart/form/data',
           }
@@ -96,7 +95,7 @@ const MainPage = () => {
       else if(fileType=== 'application/msword' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'){
         // setFileType('word');
         setLoading(true);
-        const response = await axios.post(`${url}/upload/word`, formData, {
+        const response = await axios.post(`${import.meta.env.VITE_URL}/upload/word`, formData, {
           headers:{
             "Content-Type": "multipart/form/data",
           }
@@ -122,7 +121,7 @@ const MainPage = () => {
     if(fileType === 'application/msword' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'){
       try{
         setLoading(true);
-        const response = await axios.post(`${url}/download`, {docText, fileType}, {
+        const response = await axios.post(`${import.meta.env.VITE_URL}/download`, {docText, fileType}, {
           headers: {
             'Content-Type' : 'application/json'
           },
@@ -137,7 +136,7 @@ const MainPage = () => {
         document.body.appendChild(link);
         link.click();
         link.remove();
-        window.URL.revokeObjectURL(url);
+        window.URL.revokeObjectURL(import.meta.env.VITE_URL);
       }
       catch(error){
         console.log("Error Downloading File", error);
@@ -146,7 +145,7 @@ const MainPage = () => {
     else{
       try{
         setLoading(true);
-        const response = await axios.post(`${url}/download`, {docText, fileType}, {
+        const response = await axios.post(`${import.meta.env.VITE_URL}/download`, {docText, fileType}, {
           headers: {
             'Content-Type' : 'application/json'
           },
@@ -161,7 +160,7 @@ const MainPage = () => {
         document.body.appendChild(link);
         link.click();
         link.remove();
-        window.URL.revokeObjectURL(url);
+        window.URL.revokeObjectURL(import.meta.env.VITE_URL);
       }
       catch(error){
         console.log("Error Downloading File", error);
