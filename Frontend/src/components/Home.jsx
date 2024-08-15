@@ -1,7 +1,6 @@
 import React from 'react'
 import '../styles/home.css'
 import { useNavigate } from 'react-router-dom'
-import bionicConvertor from '../../../Backend/utils/bionic_convert'
 import { convert } from '../utils/bionicTextConversion'
 
 const Home = () => {
