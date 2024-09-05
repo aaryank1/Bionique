@@ -1,10 +1,14 @@
+
+https://github.com/user-attachments/assets/f6e3b963-aba9-4149-b0ce-243e9f4c5664
 # Bionique
 
 ## Overview
 
 **Bionique** is a web application that enhances reading speed and comprehension by transforming text using the bionic reading technique. Users can input text directly or upload PDF and Word documents. The application converts the content by highlighting specific parts, making it easier to process and understand.
 
-**Link:** [https://bionique.onrender.com](https://bionique.onrender.com)
+
+https://github.com/user-attachments/assets/23503e5d-8de4-4dfd-ad45-c339ab931a73
+
 
 ## Features
 
